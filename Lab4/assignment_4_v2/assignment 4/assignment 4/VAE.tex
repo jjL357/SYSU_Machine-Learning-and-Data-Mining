@@ -1,0 +1,196 @@
+%!TEX TS-program = xelatex
+%!TEX encoding = UTF-8 Unicode
+
+\documentclass[a4paper]{article}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{paralist}
+\usepackage{epstopdf}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyvrb}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{float}
+\usepackage{paralist}
+\usepackage[svgname]{xcolor}
+\usepackage{enumerate}
+\usepackage{array}
+\usepackage{times}
+\usepackage{url}
+\usepackage{fancyhdr}
+\usepackage{comment}
+\usepackage{environ}
+\usepackage{times}
+\usepackage{textcomp}
+\usepackage{caption}
+
+\usepackage{fontspec,xltxtra,xunicode}
+\usepackage{fontspec, xeCJK}
+
+
+
+
+\urlstyle{rm}
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[]
+\newtheorem{conjecture}{Conjecture}[]
+\newtheorem{example}{Example}[]
+\newtheorem{theorem}{Theorem}[]
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+
+\floatname{algorithm}{Procedure}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\newcommand{\abs}[1]{\lvert#1\rvert}
+\newcommand{\norm}[1]{\lVert#1\rVert}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\Nat}{\mathbb{N}}
+\newcommand{\br}[1]{\{#1\}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\renewcommand{\qedsymbol}{$\blacksquare$}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+
+\newcommand{\vc}[1]{\boldsymbol{#1}}
+\newcommand{\xv}{\vc{x}}
+\newcommand{\Sigmav}{\vc{\Sigma}}
+\newcommand{\alphav}{\vc{\alpha}}
+\newcommand{\muv}{\vc{\mu}}
+
+\def\x{\mathbf x}
+\def\y{\mathbf y}
+\def\w{\mathbf w}
+\def\v{\mathbf v}
+\def\E{\mathbb E}
+\def\V{\mathbb V}
+
+\newcommand \expect {\mathbb{E}}
+\newcommand \mle [1]{{\hat #1}^{\rm MLE}}
+\newcommand \map [1]{{\hat #1}^{\rm MAP}}
+%\newcommand \argmax {\operatorname*{argmax}}
+%\newcommand \argmin {\operatorname*{argmin}}
+\newcommand \code [1]{{\tt #1}}
+\newcommand \datacount [1]{\#\{#1\}}
+\newcommand \ind [1]{\mathbb{I}\{#1\}}
+\newcommand \bs [1]{\boldsymbol{#1}}
+
+
+% TO SHOW SOLUTIONS, include following (else comment out):
+\newenvironment{soln}{
+     \leavevmode\color{blue}\ignorespaces
+ }{}
+
+% TO ONLY SHOW HOMEWORK QUESTIONS, include following:
+%\NewEnviron{soln}
+% {}
+% {}
+
+
+
+\hypersetup{
+%    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
+
+\geometry{
+  top=1in,            % <-- you want to adjust this
+  inner=1in,
+  outer=1in,
+  bottom=1in,
+  headheight=3em,       % <-- and this
+  headsep=2em,          % <-- and this
+  footskip=3em,
+}
+
+
+\pagestyle{fancyplain}
+\lhead{\fancyplain{}{Homework 4: Deep Generative Model}}
+\rhead{\fancyplain{}{Machine Learning and Data Mining, S. Liang}}
+\cfoot{\thepage}
+
+\title{\textsc{Homework 4: \\  Deep Generative Model}} % Title
+
+\newcommand{\outDate}{October 23, 2023}
+\newcommand{\dueDate}{23:59 pm, January 03, 2024}
+
+\author{\href{xx}{\textsc{Machine Learning and Data Mining (Fall 2023)}} \\[0.5em] 
+Student Name: \hspace{13em} Student ID: \\[0.5em]
+Lectured by: Shangsong Liang \\
+Sun Yat-sen University\\
+Your assignment should be submitted to the email that will be provided by the TA \\
+Deadline of your submission is: 23:59PM, January 05, 2024\\
+**Do NOT Distributed This Document and the Associated Datasets**} 
+
+\date{}
+
+\begin{document}
+
+\maketitle 
+%\renewcommand{\baselinestretch}{2}
+\section*{Problem: Implementing the Variational Autoencoder (VAE)}
+For this problem, we will be using PyTorch to implement the variational autoencoder (VAE) and learn a probabilistic model of the MNIST dataset of handwritten digits. Formally, we observe a sequence of binary pixels $x \in \{0, 1\}^d$, and let $z \in \mathbb{R}^k$ denote a set of latent variables. Our goal is to learn a latent variable model $p_\theta(x)$ of the high-dimensional data distribution $p_{\text{data}}(x)$.
+
+The VAE is a latent variable model that learns a specific parameterization $p_\theta(x) = \int p_\theta(x, z) \, dz = \int p(z)p_\theta(x|z) \, dz$. Specifically, the VAE is defined by the following generative process:
+\begin{align*}
+    p(z) &= \mathcal{N}(z|0, I) \\
+    p_\theta(x|z) &= \text{Bernoulli}(x|f_\theta(z))
+\end{align*}
+
+In other words, we assume that the latent variables $z$ are sampled from a unit Gaussian distribution $\mathcal{N}(z|0, I)$. The latent $z$ are then passed through a neural network decoder $f_\theta(\cdot)$ to obtain the parameters of the $d$ Bernoulli random variables which model the pixels in each image.
+
+Although we would like to maximize the marginal likelihood $p_\theta(x)$, computation of $p_\theta(x) = \int p(z)p_\theta(x|z) \, dz$ is generally intractable as it involves integration over all possible values of $z$. Therefore, we posit a variational approximation to the true posterior and perform amortized inference as we have seen in class:
+\[
+q_\phi(z|x) = \mathcal{N}(z|\mu_\phi(x), \text{diag}(\sigma_\phi^2(x)))
+\]
+
+Specifically, we pass each image $x$ through a neural network which outputs the mean $\mu_\phi$ and diagonal covariance $\text{diag}(\sigma_\phi^2(x))$ of the multivariate Gaussian distribution that approximates the distribution over latent variables $z$ given $x$. We then maximize the lower bound to the marginal log-likelihood to obtain an expression known as the evidence lower bound (ELBO):
+\[
+\log p_\theta(x) \geq \text{ELBO}(x; \theta; \phi) = \mathbb{E}_{q_\phi(z|x)}[\log p_\theta(x|z)] - \text{D}_{KL}(q_\phi(z|x) \,||\, p(z))
+\]
+
+Notice that the ELBO, as shown on the right-hand side of the above expression, decomposes into two terms: (1) the reconstruction loss: $-\mathbb{E}_{q_\phi(z)}[\log p_\theta(x|z)]$, and (2) the Kullback-Leibler (KL) term: $\text{D}_{KL}(q_\phi(z|x) \,||\, p(z))$.\linebreak
+
+Your objective is to implement the variational autoencoder by modifying \texttt{utils.py} and \texttt{vae.py}.
+
+\begin{enumerate}
+    \item [1.] Implement the reparameterization trick in the function \texttt{sample\_gaussian} of \texttt{utils.py}. Specifically, your answer will take in the mean $\mu$ and variance $\sigma^2$ of the Gaussian distribution $q_\phi(z|x)$ and return a sample $z \sim q_\phi(z|x)$.
+    \item [2.] Next, implement negative ELBO bound in the file \texttt{vae.py}. Several of the functions in \texttt{utils.py} will be helpful, so please check what is provided. Note that we ask for the negative ELBO, as PyTorch optimizers minimize the loss function. Additionally, since we are computing the negative ELBO over a mini-batch of data $\{x^{(i)}\}_{i=1}^n$, make sure to compute the average $-\frac{1}{n} \sum_{i=1}^n \text{ELBO}(x^{(i)}; \theta; \phi)$ over the minibatch. Finally, note that the ELBO itself cannot be computed exactly since exact computation of the reconstruction term is intractable. Instead, we ask that you estimate the reconstruction term via Monte Carlo sampling:
+    \[
+    -\mathbb{E}_{q_\phi(z|x)}[\log p_\theta(x|z)] \approx -\log p_\theta(x|z^{(1)})
+    \]
+    here $z^{(1)} \sim q_\phi(z|x)$ denotes a single sample. The function \texttt{kl\_normal} in \texttt{utils.py} will be helpful. Note: negative ELBO bound also expects you to return the average reconstruction loss and KL divergence.
+    
+    \item [3.] To test your implementation, run \texttt{python run\_vae.py} to train the VAE. Once the run is complete (20000 iterations), it will output (assuming your implementation is correct): the average (1) negative ELBO, (2) KL term, and (3) reconstruction loss as evaluated on a test subset that we have selected. Report the three numbers you obtain as part of the write-up. Since we’re using stochastic optimization, you may wish to run the model multiple times and report each metric’s mean and corresponding standard error. (Hint: the negative ELBO on the test subset should be somewhere around 100.)
+    
+    \item [4.]  Visualize 200 digits (generate a single image tiled in a grid of $10 \times 20$ digits) sampled from $p_\theta(x)$.
+\end{enumerate}
+
+
+
+\bibliographystyle{apalike}
+
+%----------------------------------------------------------------------------------------
+
+
+\end{document}
